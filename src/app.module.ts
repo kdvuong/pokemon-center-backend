@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+import { LocalUsersModule } from './users/local/local-users.module';
 
 @Module({
   imports: [
-    UsersModule,
+    LocalUsersModule,
     AuthModule,
     TypeOrmModule.forRoot({
       type: 'postgres', // type of our database
@@ -19,6 +20,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       autoLoadEntities: true, // models will be loaded automatically (you don't have to explicitly specify the entities: [] array)
       synchronize: true, // your entities will be synced with the database (ORM will map entity definitions to corresponding SQL tabled), every time you run the application (recommended: disable in the production)
     }),
+    ConfigModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
