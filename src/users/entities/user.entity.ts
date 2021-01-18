@@ -1,13 +1,19 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  TableInheritance,
+} from 'typeorm';
 
-@Entity() // sql table === 'coffee'
+@Entity()
+@TableInheritance({ column: { type: 'varchar', name: 'type' } })
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   email: string;
-
-  @Column()
-  created_at: Date;
 }
