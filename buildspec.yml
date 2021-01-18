@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      docker: 19
+    commands:
+      - npm install -g yarn
+      - echo yarn -v
+      - yarn -v
+  pre_build:
+    commands:
+      - yarn add typescript --g
+      - yarn install --frozen-lockfile && yarn cache clean --force
+  build:
+    commands:
+      - yarn build
+artifacts:
+  type: zip
+  files:
+    - package.json
+    - package-lock.json
+    - tsconfig.json
+    - Dockerrun.aws.json
+    - 'dist/**/*'
+    - Dockerfile
