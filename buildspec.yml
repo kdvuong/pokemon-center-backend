@@ -6,8 +6,7 @@ phases:
       docker: 19
     commands:
       - npm install -g yarn
-      - echo yarn -v
-      - yarn -v
+      - npm install -g @nestjs/cli
   pre_build:
     commands:
       - yarn add typescript --g
