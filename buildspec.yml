@@ -23,3 +23,4 @@ artifacts:
     - Dockerrun.aws.json
     - 'dist/**/*'
     - Dockerfile
+    - .npmrc
