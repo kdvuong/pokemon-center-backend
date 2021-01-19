@@ -4,6 +4,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 COPY .npmrc ./
+COPY Procfile ./
 
 RUN npm install --only=development
 
@@ -20,6 +21,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 COPY .npmrc ./
+COPY Procfile ./
 
 RUN npm install --only=production
 
