@@ -8,7 +8,11 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
-import { LoginStatus, RegistrationStatus } from 'src/shared/interfaces';
+import {
+  AccessToken,
+  LoginStatus,
+  RegistrationStatus,
+} from 'src/shared/interfaces';
 import { LoginGoogleUserDto } from 'src/users/google/dto/login-google-user.dto';
 import { CreateLocalUserDto } from 'src/users/local/dto/create-local-user.dto';
 import { LoginLocalUserDto } from 'src/users/local/dto/login-local-user.dto';
@@ -26,7 +30,7 @@ export class AuthController {
       createUserDto,
     );
     if (!result.success) {
-      throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
+      throw new HttpException('Failed to register', result.statusCode);
     }
     return result;
   }
@@ -35,16 +39,18 @@ export class AuthController {
   public async login(
     @Res({ passthrough: true }) response: Response,
     @Body() loginUserDto: LoginLocalUserDto,
-  ): Promise<{ accessToken: string }> {
-    const { accessToken, refreshToken } = await this.authService.login(
-      loginUserDto,
-    );
-    response.cookie('jwt', refreshToken, {
-      httpOnly: true,
-      path: '/auth/renew-token',
-      expires: new Date(Date.now() + 1000 * 3600 * 24 * 7),
-    });
-    return { accessToken };
+  ): Promise<AccessToken> {
+    const loginStatus = await this.authService.login(loginUserDto);
+    return this.processLoginStatus(loginStatus, response);
+  }
+
+  @Post('google')
+  public async googleLogin(
+    @Res({ passthrough: true }) response: Response,
+    @Body() loginUserDto: LoginGoogleUserDto,
+  ): Promise<AccessToken> {
+    const loginStatus = await this.authService.googleLogin(loginUserDto);
+    return this.processLoginStatus(loginStatus, response);
   }
 
   @Post('logout')
@@ -55,16 +61,22 @@ export class AuthController {
     });
   }
 
-  @Post('google')
-  public async googleLogin(
-    @Body() loginUserDto: LoginGoogleUserDto,
-  ): Promise<LoginStatus> {
-    return this.authService.googleLogin(loginUserDto);
-  }
-
   @Post('renew-token')
   public renewToken(@Req() request: Request): { accessToken: string } {
     const accessToken = this.authService.renewToken(request.cookies.jwt);
+    return { accessToken };
+  }
+
+  private processLoginStatus(
+    loginStatus: LoginStatus,
+    response: Response,
+  ): AccessToken {
+    const { accessToken, refreshToken } = loginStatus;
+    response.cookie('jwt', refreshToken, {
+      httpOnly: true,
+      path: '/auth/renew-token',
+      expires: new Date(Date.now() + 1000 * 3600 * 24 * 7),
+    });
     return { accessToken };
   }
 }

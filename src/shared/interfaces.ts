@@ -5,10 +5,14 @@ export interface JwtPayload {
 
 export interface RegistrationStatus {
   success: boolean;
-  message: string;
+  statusCode: number;
 }
 
 export interface LoginStatus {
   refreshToken: string;
+  accessToken: string;
+}
+
+export interface AccessToken {
   accessToken: string;
 }
