@@ -53,7 +53,7 @@ export class LocalUsersService {
       where: { email },
     });
     if (userInDb) {
-      throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
+      throw new HttpException('User already exists', HttpStatus.CONFLICT);
     }
 
     const user: LocalUser = this.localUserRepo.create({ email, password });

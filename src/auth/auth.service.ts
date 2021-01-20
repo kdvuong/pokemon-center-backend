@@ -23,14 +23,14 @@ export class AuthService {
   async register(userDto: CreateLocalUserDto): Promise<RegistrationStatus> {
     let status: RegistrationStatus = {
       success: true,
-      message: 'user registered',
+      statusCode: 200,
     };
     try {
       await this.localUsersService.create(userDto);
     } catch (err) {
       status = {
         success: false,
-        message: err,
+        statusCode: err.status,
       };
     }
     return status;
