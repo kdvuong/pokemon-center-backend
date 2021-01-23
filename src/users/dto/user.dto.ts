@@ -7,4 +7,8 @@ export class UserDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
+
+  name: string;
+
+  discriminator: number;
 }

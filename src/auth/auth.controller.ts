@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import {
-  AccessToken,
+  LoginResponse,
   LoginStatus,
   RegistrationStatus,
 } from 'src/shared/interfaces';
@@ -38,7 +38,7 @@ export class AuthController {
   public async login(
     @Res({ passthrough: true }) response: Response,
     @Body() loginUserDto: LoginLocalUserDto,
-  ): Promise<AccessToken> {
+  ): Promise<LoginResponse> {
     const loginStatus = await this.authService.login(loginUserDto);
     return this.processLoginStatus(loginStatus, response);
   }
@@ -47,7 +47,7 @@ export class AuthController {
   public async googleLogin(
     @Res({ passthrough: true }) response: Response,
     @Body() loginUserDto: LoginGoogleUserDto,
-  ): Promise<AccessToken> {
+  ): Promise<LoginResponse> {
     const loginStatus = await this.authService.googleLogin(loginUserDto);
     return this.processLoginStatus(loginStatus, response);
   }
@@ -69,13 +69,13 @@ export class AuthController {
   private processLoginStatus(
     loginStatus: LoginStatus,
     response: Response,
-  ): AccessToken {
-    const { accessToken, refreshToken } = loginStatus;
+  ): LoginResponse {
+    const { accessToken, refreshToken, name, discriminator } = loginStatus;
     response.cookie('jwt', refreshToken, {
       httpOnly: true,
       path: '/auth/renew-token',
       expires: new Date(Date.now() + 1000 * 3600 * 24 * 7),
     });
-    return { accessToken };
+    return { accessToken, name, discriminator };
   }
 }

@@ -1,8 +1,6 @@
 import { Request } from 'express';
-import { UserDto } from 'src/users/dto/user.dto';
-
 export interface UserRequest extends Request {
-  user: UserDto;
+  user: JwtPayload;
 }
 
 export interface JwtPayload {
@@ -18,8 +16,12 @@ export interface RegistrationStatus {
 export interface LoginStatus {
   refreshToken: string;
   accessToken: string;
+  name: string;
+  discriminator: number;
 }
 
-export interface AccessToken {
+export interface LoginResponse {
   accessToken: string;
+  name: string;
+  discriminator: number;
 }

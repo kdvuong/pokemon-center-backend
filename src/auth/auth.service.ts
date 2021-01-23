@@ -47,24 +47,26 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+      name: user.name,
+      discriminator: user.discriminator,
     };
   }
 
-  private generateAccessToken(userDto: UserDto): string {
+  private generateAccessToken(payload: JwtPayload): string {
     const options: JwtSignOptions = {
       secret: process.env.ACCESS_TOKEN_SECRET,
       expiresIn: process.env.ACCESS_EXPIRESIN,
     };
-    const token = this.jwtService.sign(userDto, options);
+    const token = this.jwtService.sign(payload, options);
     return token;
   }
 
-  private generateRefreshToken(userDto: UserDto): string {
+  private generateRefreshToken(payload: JwtPayload): string {
     const options: JwtSignOptions = {
       secret: process.env.REFRESH_TOKEN_SECRET,
       expiresIn: process.env.REFRESH_EXPIRESIN,
     };
-    const token = this.jwtService.sign(userDto, options);
+    const token = this.jwtService.sign(payload, options);
     return token;
   }
 
@@ -89,14 +91,21 @@ export class AuthService {
   }
 
   async googleLogin(dto: LoginGoogleUserDto): Promise<LoginStatus> {
-    const user = await this.googleUsersService.findByOAuth(dto);
+    const {
+      id,
+      email,
+      name,
+      discriminator,
+    } = await this.googleUsersService.findByOAuth(dto);
     // generate and sign token
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = this.generateRefreshToken(user);
+    const accessToken = this.generateAccessToken({ id, email });
+    const refreshToken = this.generateRefreshToken({ id, email });
 
     return {
       accessToken,
       refreshToken,
+      name,
+      discriminator,
     };
   }
 }
