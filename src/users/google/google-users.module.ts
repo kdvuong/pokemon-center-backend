@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { GoogleUser } from '../entities/google-user.entity';
 import { User } from '../entities/user.entity';
+import { UsernamesService } from '../usernames.service';
+import { GoogleUser } from './entities/google-user.entity';
 import { GoogleUsersService } from './google-users.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, GoogleUser])],
-  providers: [GoogleUsersService],
+  providers: [GoogleUsersService, UsernamesService],
   exports: [GoogleUsersService],
 })
 export class GoogleUsersModule {}

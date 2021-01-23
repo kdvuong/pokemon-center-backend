@@ -1,14 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { compare } from 'bcrypt';
 import { toUserDto } from 'src/shared/mapper';
 import { Repository } from 'typeorm';
 import { UserDto } from '../dto/user.dto';
-import { GoogleUser } from '../entities/google-user.entity';
 import { User } from '../entities/user.entity';
 import { google } from 'googleapis';
 import { LoginGoogleUserDto } from './dto/login-google-user.dto';
 import { CreateGoogleUserDto } from './dto/create-google-user.dto';
+import { GoogleUser } from './entities/google-user.entity';
+import { UsernamesService } from '../usernames.service';
 
 const { OAuth2 } = google.auth;
 
@@ -19,6 +19,7 @@ export class GoogleUsersService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(GoogleUser)
     private readonly googleUserRepo: Repository<GoogleUser>,
+    private readonly usernamesService: UsernamesService,
   ) {}
 
   async findByOAuth(dto: LoginGoogleUserDto): Promise<UserDto> {
@@ -72,9 +73,12 @@ export class GoogleUsersService {
 
   private async create(dto: CreateGoogleUserDto): Promise<UserDto> {
     const { email, googleId } = dto;
+    const { name, discriminator } = await this.usernamesService.create();
     const user: GoogleUser = this.googleUserRepo.create({
       email,
       googleId,
+      name,
+      discriminator,
     });
     await this.googleUserRepo.save(user);
     return toUserDto(user);

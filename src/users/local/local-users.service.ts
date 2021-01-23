@@ -5,6 +5,7 @@ import { toUserDto } from 'src/shared/mapper';
 import { Repository } from 'typeorm';
 import { UserDto } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
+import { UsernamesService } from '../usernames.service';
 import { CreateLocalUserDto } from './dto/create-local-user.dto';
 import { LoginLocalUserDto } from './dto/login-local-user.dto';
 import { LocalUser } from './entities/local-user.entity';
@@ -16,6 +17,7 @@ export class LocalUsersService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(LocalUser)
     private readonly localUserRepo: Repository<LocalUser>,
+    private readonly usernamesService: UsernamesService,
   ) {}
 
   async findOne(options?: Record<string, unknown>): Promise<UserDto> {
@@ -46,7 +48,7 @@ export class LocalUsersService {
   }
 
   async create(userDto: CreateLocalUserDto): Promise<UserDto> {
-    const { email, password } = userDto;
+    const { email, password, username } = userDto;
 
     // check if the user exists in the db
     const userInDb = await this.userRepo.findOne({
@@ -55,8 +57,15 @@ export class LocalUsersService {
     if (userInDb) {
       throw new HttpException('User already exists', HttpStatus.CONFLICT);
     }
-
-    const user: LocalUser = this.localUserRepo.create({ email, password });
+    const { name, discriminator } = await this.usernamesService.create(
+      username,
+    );
+    const user: LocalUser = this.localUserRepo.create({
+      email,
+      password,
+      name,
+      discriminator,
+    });
     await this.localUserRepo.save(user);
     return toUserDto(user);
   }
