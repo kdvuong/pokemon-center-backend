@@ -5,7 +5,7 @@ import { GoogleUsersModule } from 'src/users/google/google-users.module';
 import { LocalUsersModule } from 'src/users/local/local-users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
