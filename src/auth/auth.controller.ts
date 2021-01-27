@@ -7,15 +7,13 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
-import {
-  LoginResponse,
-  LoginStatus,
-  RegistrationStatus,
-} from 'src/shared/interfaces';
 import { LoginGoogleUserDto } from 'src/users/google/dto/login-google-user.dto';
 import { CreateLocalUserDto } from 'src/users/local/dto/create-local-user.dto';
 import { LoginLocalUserDto } from 'src/users/local/dto/login-local-user.dto';
 import { AuthService } from './auth.service';
+import { AccessPayload } from './interface/access-payload';
+import { CredentialTokens } from './interface/credential-tokens';
+import { RegistrationStatus } from './interface/registration-status';
 
 @Controller('auth')
 export class AuthController {
@@ -38,18 +36,18 @@ export class AuthController {
   public async login(
     @Res({ passthrough: true }) response: Response,
     @Body() loginUserDto: LoginLocalUserDto,
-  ): Promise<LoginResponse> {
+  ): Promise<AccessPayload> {
     const loginStatus = await this.authService.login(loginUserDto);
-    return this.processLoginStatus(loginStatus, response);
+    return this.processCredentialTokens(loginStatus, response);
   }
 
   @Post('google')
   public async googleLogin(
     @Res({ passthrough: true }) response: Response,
     @Body() loginUserDto: LoginGoogleUserDto,
-  ): Promise<LoginResponse> {
+  ): Promise<AccessPayload> {
     const loginStatus = await this.authService.googleLogin(loginUserDto);
-    return this.processLoginStatus(loginStatus, response);
+    return this.processCredentialTokens(loginStatus, response);
   }
 
   @Post('logout')
@@ -61,21 +59,23 @@ export class AuthController {
   }
 
   @Post('renew-token')
-  public renewToken(@Req() request: Request): { accessToken: string } {
-    const accessToken = this.authService.renewToken(request.cookies.jwt);
-    return { accessToken };
+  public async renewToken(@Req() request: Request): Promise<AccessPayload> {
+    const accessPayload = await this.authService.renewToken(
+      request.cookies.jwt,
+    );
+    return accessPayload;
   }
 
-  private processLoginStatus(
-    loginStatus: LoginStatus,
+  private processCredentialTokens(
+    tokens: CredentialTokens,
     response: Response,
-  ): LoginResponse {
-    const { accessToken, refreshToken, name, discriminator } = loginStatus;
+  ): AccessPayload {
+    const { accessToken, refreshToken } = tokens;
     response.cookie('jwt', refreshToken, {
       httpOnly: true,
       path: '/auth/renew-token',
       expires: new Date(Date.now() + 1000 * 3600 * 24 * 7),
     });
-    return { accessToken, name, discriminator };
+    return { accessToken };
   }
 }

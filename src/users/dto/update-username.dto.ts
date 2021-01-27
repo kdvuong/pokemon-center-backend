@@ -10,5 +10,6 @@ export class UpdateUsernameDto {
   discriminator?: number;
 
   @IsBoolean()
+  @IsOptional()
   acceptNewDiscriminator: boolean;
 }

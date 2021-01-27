@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { findException } from 'src/shared/utils';
 import { Repository } from 'typeorm';
@@ -41,8 +41,9 @@ export class UsernamesService {
           existingDiscriminators,
         );
       } else {
-        throw new Error(
+        throw new HttpException(
           'Username and discriminator combination already in use.',
+          HttpStatus.CONFLICT,
         );
       }
     }
@@ -55,7 +56,7 @@ export class UsernamesService {
 
   private async getExistingDiscriminators(name: string) {
     if (!name) {
-      throw new Error('Invalid name');
+      throw new HttpException('Invalid name', HttpStatus.BAD_REQUEST);
     }
     return (
       await this.userRepo

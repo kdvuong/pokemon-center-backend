@@ -1,20 +1,21 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
-import {
-  JwtPayload,
-  LoginStatus,
-  RegistrationStatus,
-} from 'src/shared/interfaces';
-import { UserDto } from 'src/users/dto/user.dto';
 import { CreateLocalUserDto } from 'src/users/local/dto/create-local-user.dto';
 import { LoginLocalUserDto } from 'src/users/local/dto/login-local-user.dto';
 import { LoginGoogleUserDto } from 'src/users/google/dto/login-google-user.dto';
 import { LocalUsersService } from 'src/users/local/local-users.service';
 import { GoogleUsersService } from 'src/users/google/google-users.service';
+import { RefreshTokenPayload } from './interface/refresh-token-payload';
+import { UsersService } from 'src/users/users.service';
+import { RegistrationStatus } from './interface/registration-status';
+import { CredentialTokens } from './interface/credential-tokens';
+import { AccessPayload } from './interface/access-payload';
+import { AccessTokenPayload } from './interface/access-token-payload';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly usersService: UsersService,
     private readonly localUsersService: LocalUsersService,
     private readonly googleUsersService: GoogleUsersService,
     private readonly jwtService: JwtService,
@@ -36,23 +37,24 @@ export class AuthService {
     return status;
   }
 
-  async login(loginUserDto: LoginLocalUserDto): Promise<LoginStatus> {
+  async login(loginUserDto: LoginLocalUserDto): Promise<CredentialTokens> {
     // find user in db
-    const user = await this.localUsersService.findByLogin(loginUserDto);
+    const { id } = await this.localUsersService.findByLogin(loginUserDto);
 
     // generate and sign token
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = this.generateRefreshToken(user);
+    const accessToken = this.generateAccessToken(id);
+    const refreshToken = this.generateRefreshToken(id);
 
     return {
       accessToken,
       refreshToken,
-      name: user.name,
-      discriminator: user.discriminator,
     };
   }
 
-  private generateAccessToken(payload: JwtPayload): string {
+  private generateAccessToken(userId: string): string {
+    const payload: AccessTokenPayload = {
+      id: userId,
+    };
     const options: JwtSignOptions = {
       secret: process.env.ACCESS_TOKEN_SECRET,
       expiresIn: process.env.ACCESS_EXPIRESIN,
@@ -61,7 +63,10 @@ export class AuthService {
     return token;
   }
 
-  private generateRefreshToken(payload: JwtPayload): string {
+  private generateRefreshToken(userId: string): string {
+    const payload: RefreshTokenPayload = {
+      id: userId,
+    };
     const options: JwtSignOptions = {
       secret: process.env.REFRESH_TOKEN_SECRET,
       expiresIn: process.env.REFRESH_EXPIRESIN,
@@ -70,42 +75,29 @@ export class AuthService {
     return token;
   }
 
-  async validateLocalUser(payload: JwtPayload): Promise<UserDto> {
-    const user = await this.localUsersService.findByPayload(payload);
-    if (!user) {
-      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
-    }
-    return user;
-  }
-
-  renewToken(token: string): string {
+  async renewToken(token: string): Promise<AccessPayload> {
     try {
-      const { id, email } = this.jwtService.verify<UserDto>(token, {
+      const { id } = this.jwtService.verify<RefreshTokenPayload>(token, {
         secret: process.env.REFRESH_TOKEN_SECRET,
       });
-      return this.generateAccessToken({ id, email });
+      return {
+        accessToken: this.generateAccessToken(id),
+      };
     } catch (err) {
       console.log(err);
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
     }
   }
 
-  async googleLogin(dto: LoginGoogleUserDto): Promise<LoginStatus> {
-    const {
-      id,
-      email,
-      name,
-      discriminator,
-    } = await this.googleUsersService.findByOAuth(dto);
+  async googleLogin(dto: LoginGoogleUserDto): Promise<CredentialTokens> {
+    const { id } = await this.googleUsersService.findByOAuth(dto);
     // generate and sign token
-    const accessToken = this.generateAccessToken({ id, email });
-    const refreshToken = this.generateRefreshToken({ id, email });
+    const accessToken = this.generateAccessToken(id);
+    const refreshToken = this.generateRefreshToken(id);
 
     return {
       accessToken,
       refreshToken,
-      name,
-      discriminator,
     };
   }
 }
