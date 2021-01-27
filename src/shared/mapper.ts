@@ -3,6 +3,6 @@ import { User } from 'src/users/entities/user.entity';
 
 export const toUserDto = (data: User): UserDto => {
   const { id, email, name, discriminator } = data;
-  const userDto: UserDto = { id, email, name, discriminator };
+  const userDto: UserDto = { id, email, username: { name, discriminator } };
   return userDto;
 };
