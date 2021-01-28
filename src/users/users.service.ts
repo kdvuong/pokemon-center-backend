@@ -27,6 +27,13 @@ export class UsersService {
       throw new HttpException('No change', HttpStatus.BAD_REQUEST);
     }
 
+    if (discriminator <= 0 || discriminator > 9999) {
+      throw new HttpException(
+        'Discriminator needs to be between 1 and 9999.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const {
       name: newName,
       discriminator: newDiscriminator,
