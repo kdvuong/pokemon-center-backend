@@ -55,6 +55,8 @@ export class AuthController {
     response.cookie('jwt', null, {
       httpOnly: true,
       path: '/auth/renew-token',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
   }
 
@@ -75,6 +77,8 @@ export class AuthController {
       httpOnly: true,
       path: '/auth/renew-token',
       expires: new Date(Date.now() + 1000 * 3600 * 24 * 7),
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     return { accessToken };
   }
