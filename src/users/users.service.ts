@@ -22,29 +22,29 @@ export class UsersService {
 
   async updateUsername(userId: string, updateUsernameDto: UpdateUsernameDto) {
     const user = await this.userRepo.findOneOrFail({ id: userId });
-    const { name, discriminator, acceptNewDiscriminator } = updateUsernameDto;
-    if (name === user.name && discriminator === user.discriminator) {
+    const { name, tag, acceptNewTag } = updateUsernameDto;
+    if (name === user.name && tag === user.tag) {
       throw new HttpException('No change', HttpStatus.BAD_REQUEST);
     }
 
-    if (discriminator <= 0 || discriminator > 9999) {
+    if (tag <= 0 || tag > 9999) {
       throw new HttpException(
-        'Discriminator needs to be between 1 and 9999.',
+        'Tag needs to be between 1 and 9999.',
         HttpStatus.BAD_REQUEST,
       );
     }
 
     const {
       name: newName,
-      discriminator: newDiscriminator,
+      tag: newTag,
     } = await this.usernamesService.getAvailableUsername(
       name ?? user.name,
-      discriminator ?? user.discriminator,
-      acceptNewDiscriminator,
+      tag ?? user.tag,
+      acceptNewTag,
     );
 
     user.name = newName;
-    user.discriminator = newDiscriminator;
+    user.tag = newTag;
 
     return this.userRepo.save(user);
   }

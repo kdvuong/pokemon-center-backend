@@ -11,6 +11,7 @@ import { RegistrationStatus } from './interface/registration-status';
 import { CredentialTokens } from './interface/credential-tokens';
 import { AccessPayload } from './interface/access-payload';
 import { AccessTokenPayload } from './interface/access-token-payload';
+import { TokenExpiredError } from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
@@ -84,8 +85,13 @@ export class AuthService {
         accessToken: this.generateAccessToken(id),
       };
     } catch (err) {
-      console.log(err);
-      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
+      if (err instanceof TokenExpiredError) {
+        throw new HttpException(
+          'Expired refresh token',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      throw new HttpException('Invalid refresh token', HttpStatus.BAD_REQUEST);
     }
   }
 

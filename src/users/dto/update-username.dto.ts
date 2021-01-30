@@ -7,9 +7,9 @@ export class UpdateUsernameDto {
 
   @IsNumber()
   @IsOptional()
-  discriminator?: number;
+  tag?: number;
 
   @IsBoolean()
   @IsOptional()
-  acceptNewDiscriminator: boolean;
+  acceptNewTag: boolean;
 }

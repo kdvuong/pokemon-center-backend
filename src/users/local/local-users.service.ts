@@ -57,14 +57,12 @@ export class LocalUsersService {
     if (userInDb) {
       throw new HttpException('User already exists', HttpStatus.CONFLICT);
     }
-    const { name, discriminator } = await this.usernamesService.create(
-      username,
-    );
+    const { name, tag } = await this.usernamesService.create(username);
     const user: LocalUser = this.localUserRepo.create({
       email,
       password,
       name,
-      discriminator,
+      tag,
     });
     await this.localUserRepo.save(user);
     return toUserDto(user);

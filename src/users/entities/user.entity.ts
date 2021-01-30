@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Unique(['name', 'discriminator'])
+@Unique(['name', 'tag'])
 @TableInheritance({ column: { type: 'varchar', name: 'type' } })
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -29,5 +29,5 @@ export class User {
     type: 'smallint',
     nullable: false,
   })
-  discriminator: number;
+  tag: number;
 }

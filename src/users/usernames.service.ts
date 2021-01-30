@@ -15,34 +15,24 @@ export class UsernamesService {
   ) {}
 
   async create(name = this.DEFAULT_NAME) {
-    const existingDiscriminators = await this.getExistingDiscriminators(name);
-    const discriminator = this.generateNewDiscriminator(existingDiscriminators);
+    const existingTags = await this.getExistingTags(name);
+    const tag = this.generateNewTag(existingTags);
     return {
       name,
-      discriminator,
+      tag,
     };
   }
 
-  async getAvailableUsername(
-    name: string,
-    discriminator: number,
-    acceptNewDiscriminator = false,
-  ) {
-    const existingDiscriminators = await this.getExistingDiscriminators(name);
-    let newDiscriminator = discriminator;
-    const index = bs(
-      existingDiscriminators,
-      discriminator,
-      (element, needle) => element - needle,
-    );
+  async getAvailableUsername(name: string, tag: number, acceptNewTag = false) {
+    const existingTags = await this.getExistingTags(name);
+    let newTag = tag;
+    const index = bs(existingTags, tag, (element, needle) => element - needle);
     if (index >= 0) {
-      if (acceptNewDiscriminator) {
-        newDiscriminator = this.generateNewDiscriminator(
-          existingDiscriminators,
-        );
+      if (acceptNewTag) {
+        newTag = this.generateNewTag(existingTags);
       } else {
         throw new HttpException(
-          'Username and discriminator combination already in use.',
+          'Username and tag combination already in use.',
           HttpStatus.CONFLICT,
         );
       }
@@ -50,39 +40,39 @@ export class UsernamesService {
 
     return {
       name,
-      discriminator: newDiscriminator,
+      tag: newTag,
     };
   }
 
-  private async getExistingDiscriminators(name: string) {
+  private async getExistingTags(name: string) {
     if (!name) {
       throw new HttpException('Invalid name', HttpStatus.BAD_REQUEST);
     }
     return (
       await this.userRepo
         .createQueryBuilder('user')
-        .select(['user.discriminator'])
+        .select(['user.tag'])
         .where('user.name = :name', { name })
-        .orderBy('user.discriminator', 'ASC')
+        .orderBy('user.tag', 'ASC')
         .getMany()
-    ).map((user) => user.discriminator);
+    ).map((user) => user.tag);
   }
 
-  private generateNewDiscriminator(existingDiscriminators: number[]) {
-    let discriminator = 1;
-    const count = existingDiscriminators.length;
-    if (count !== 0 && existingDiscriminators[0] === 1) {
-      const index = findException(existingDiscriminators);
+  private generateNewTag(existingTags: number[]) {
+    let tag = 1;
+    const count = existingTags.length;
+    if (count !== 0 && existingTags[0] === 1) {
+      const index = findException(existingTags);
       if (index === -1) {
-        discriminator = existingDiscriminators[count - 1] + 1;
+        tag = existingTags[count - 1] + 1;
       } else {
-        discriminator = existingDiscriminators[index - 1] + 1;
+        tag = existingTags[index - 1] + 1;
       }
     }
-    return discriminator;
+    return tag;
   }
 
-  // async create(name: string, discriminator?: number) {
+  // async create(name: string, tag?: number) {
   //   const queryRunner = this.connection.createQueryRunner();
   //   await queryRunner.connect();
   //   await queryRunner.startTransaction();
@@ -90,9 +80,9 @@ export class UsernamesService {
   //   try {
   //     const username = await this.preloadUsername(name);
   //     const uniqueUsername = new UniqueUsername();
-  //     const newDiscriminator = this.getDiscriminator(username, discriminator);
+  //     const newTag = this.getTag(username, tag);
 
-  //     uniqueUsername.discriminator = newDiscriminator;
+  //     uniqueUsername.tag = newTag;
   //     uniqueUsername.name = username.name;
 
   //     await queryRunner.manager.save(username);
@@ -113,7 +103,7 @@ export class UsernamesService {
   //   if (uniqueUsername.name === newName) {
   //     throw new HttpException('No change', HttpStatus.BAD_REQUEST);
   //   }
-  //   const currentDiscriminator = uniqueUsername.discriminator;
+  //   const currentTag = uniqueUsername.tag;
   //   const queryRunner = this.connection.createQueryRunner();
   //   await queryRunner.connect();
   //   await queryRunner.startTransaction();
@@ -122,14 +112,14 @@ export class UsernamesService {
   //     const oldUsername = await this.preloadUsername(uniqueUsername.name);
   //     const newUsername = await this.preloadUsername(newName);
 
-  //     this.freeDiscriminator(oldUsername, currentDiscriminator);
+  //     this.freeTag(oldUsername, currentTag);
 
-  //     const newDiscriminator = this.getDiscriminator(
+  //     const newTag = this.getTag(
   //       newUsername,
-  //       currentDiscriminator,
+  //       currentTag,
   //     );
 
-  //     uniqueUsername.discriminator = newDiscriminator;
+  //     uniqueUsername.tag = newTag;
   //     uniqueUsername.name = newUsername.name;
 
   //     await queryRunner.manager.save(oldUsername);
@@ -146,16 +136,16 @@ export class UsernamesService {
   //   }
   // }
 
-  // async updateDiscriminator(
+  // async updateTag(
   //   uniqueUsername: UniqueUsername,
-  //   newDiscriminator: number,
+  //   newTag: number,
   // ) {
-  //   console.log('updating discriminator');
+  //   console.log('updating tag');
 
-  //   if (uniqueUsername.discriminator === newDiscriminator) {
+  //   if (uniqueUsername.tag === newTag) {
   //     throw new HttpException('No change', HttpStatus.BAD_REQUEST);
   //   }
-  //   const currentDiscriminator = uniqueUsername.discriminator;
+  //   const currentTag = uniqueUsername.tag;
   //   const queryRunner = this.connection.createQueryRunner();
   //   await queryRunner.connect();
   //   await queryRunner.startTransaction();
@@ -163,14 +153,14 @@ export class UsernamesService {
   //   try {
   //     const username = await this.preloadUsername(uniqueUsername.name);
 
-  //     this.freeDiscriminator(username, currentDiscriminator);
+  //     this.freeTag(username, currentTag);
 
-  //     const newAvailableDiscriminator = this.getDiscriminator(
+  //     const newAvailableTag = this.getTag(
   //       username,
-  //       newDiscriminator,
+  //       newTag,
   //     );
 
-  //     uniqueUsername.discriminator = newAvailableDiscriminator;
+  //     uniqueUsername.tag = newAvailableTag;
 
   //     await queryRunner.manager.save(username);
   //     const updatedUsername = await queryRunner.manager.save(uniqueUsername);
@@ -185,19 +175,19 @@ export class UsernamesService {
   //   }
   // }
 
-  // async updateNameAndDiscriminator(
+  // async updateNameAndTag(
   //   uniqueUsername: UniqueUsername,
   //   newName: string,
-  //   newDiscriminator: number,
+  //   newTag: number,
   // ) {
-  //   console.log('updating name and discriminator');
+  //   console.log('updating name and tag');
   //   if (
   //     uniqueUsername.name === newName &&
-  //     uniqueUsername.discriminator === newDiscriminator
+  //     uniqueUsername.tag === newTag
   //   ) {
   //     throw new HttpException('No change', HttpStatus.BAD_REQUEST);
   //   }
-  //   const currentDiscriminator = uniqueUsername.discriminator;
+  //   const currentTag = uniqueUsername.tag;
   //   const queryRunner = this.connection.createQueryRunner();
   //   await queryRunner.connect();
   //   await queryRunner.startTransaction();
@@ -206,13 +196,13 @@ export class UsernamesService {
   //     const oldUsername = await this.preloadUsername(uniqueUsername.name);
   //     const newUsername = await this.preloadUsername(newName);
 
-  //     this.freeDiscriminator(oldUsername, currentDiscriminator);
-  //     const availableNewDiscriminator = this.getDiscriminator(
+  //     this.freeTag(oldUsername, currentTag);
+  //     const availableNewTag = this.getTag(
   //       newUsername,
-  //       newDiscriminator,
+  //       newTag,
   //     );
 
-  //     uniqueUsername.discriminator = availableNewDiscriminator;
+  //     uniqueUsername.tag = availableNewTag;
   //     uniqueUsername.name = newUsername.name;
 
   //     await queryRunner.manager.save(oldUsername);
@@ -229,8 +219,8 @@ export class UsernamesService {
   //   }
   // }
 
-  // private getDiscriminator(username: Username, newValue?: number) {
-  //   const { availableDiscriminators: available, outOfOrder } = username;
+  // private getTag(username: Username, newValue?: number) {
+  //   const { availableTags: available, outOfOrder } = username;
   //   if (newValue) {
   //     if (newValue > available[0]) {
   //       const index = getSortedIndex(outOfOrder, newValue);
@@ -245,30 +235,30 @@ export class UsernamesService {
   //         return newValue;
   //       } else {
   //         throw new Error(
-  //           'Username and discriminator combination already in use',
+  //           'Username and tag combination already in use',
   //         );
   //       }
   //     }
-  //     const discriminator = available[0];
-  //     available[0] = discriminator + 1;
-  //     if (discriminator + 1 === outOfOrder[0]) {
+  //     const tag = available[0];
+  //     available[0] = tag + 1;
+  //     if (tag + 1 === outOfOrder[0]) {
   //       outOfOrder.shift();
   //     }
-  //     return discriminator;
+  //     return tag;
   //   } else {
-  //     const discriminator = available.pop();
+  //     const tag = available.pop();
   //     if (available.length === 0) {
-  //       available.push(discriminator + 1);
+  //       available.push(tag + 1);
   //     }
-  //     if (discriminator + 1 === outOfOrder[0]) {
+  //     if (tag + 1 === outOfOrder[0]) {
   //       outOfOrder.shift();
   //     }
-  //     return discriminator;
+  //     return tag;
   //   }
   // }
 
-  // private freeDiscriminator(username: Username, value: number) {
-  //   const { availableDiscriminators: available, outOfOrder } = username;
+  // private freeTag(username: Username, value: number) {
+  //   const { availableTags: available, outOfOrder } = username;
   //   console.log(available);
   //   console.log(value);
   //   if (value < available[0]) {
@@ -301,7 +291,7 @@ export class UsernamesService {
 
   //   const username = new Username();
   //   username.name = name;
-  //   username.availableDiscriminators = [1];
+  //   username.availableTags = [1];
   //   username.outOfOrder = [];
 
   //   return this.usernameRepo.save(username);

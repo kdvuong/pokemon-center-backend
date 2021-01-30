@@ -73,12 +73,12 @@ export class GoogleUsersService {
 
   private async create(dto: CreateGoogleUserDto): Promise<UserDto> {
     const { email, googleId } = dto;
-    const { name, discriminator } = await this.usernamesService.create();
+    const { name, tag } = await this.usernamesService.create();
     const user: GoogleUser = this.googleUserRepo.create({
       email,
       googleId,
       name,
-      discriminator,
+      tag,
     });
     await this.googleUserRepo.save(user);
     return toUserDto(user);
