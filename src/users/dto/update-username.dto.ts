@@ -1,11 +1,12 @@
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class UpdateUsernameDto {
   @IsString()
   @IsOptional()
   name?: string;
 
-  @IsNumber()
+  @Min(1)
+  @Max(9999)
   @IsOptional()
   tag?: number;
 

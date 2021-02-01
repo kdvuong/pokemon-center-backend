@@ -27,13 +27,6 @@ export class UsersService {
       throw new HttpException('No change', HttpStatus.BAD_REQUEST);
     }
 
-    if (tag <= 0 || tag > 9999) {
-      throw new HttpException(
-        'Tag needs to be between 1 and 9999.',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     const {
       name: newName,
       tag: newTag,
