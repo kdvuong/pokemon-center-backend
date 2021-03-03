@@ -1,3 +1,4 @@
+import { User } from 'src/users/entities/user.entity';
 import {
   Column,
   Entity,
@@ -13,11 +14,18 @@ export class Pokemon {
   id: string;
 
   @Column()
-  pokemon_id: string;
+  pokemon_id: number;
 
-  @ManyToOne(() => Team, (team) => team.pokemons)
+  @ManyToOne(() => Team, (team) => team.pokemons, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'team_id' })
   team: Team;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @Column()
+  user_id: string;
 
   @Column()
   nickname: string;

@@ -7,13 +7,13 @@ const pokemonsJson = JSON.parse(
 
 function buildPokemonDataMap() {
   console.log('Building pokemon data map...');
-  const pokemons: Map<string, PokemonData> = new Map();
+  const pokemons: Map<number, PokemonData> = new Map();
   for (const id in pokemonsJson) {
-    pokemons.set(id, pokemonsJson[id]);
+    pokemons.set(parseInt(id, 10), pokemonsJson[id]);
   }
   console.log('Finished building pokemon data map');
 
-  return pokemons as ReadonlyMap<string, PokemonData>;
+  return pokemons as ReadonlyMap<number, PokemonData>;
 }
 
 export const pokemonDataMap = buildPokemonDataMap();
