@@ -12,7 +12,7 @@ import { CreateLocalUserDto } from 'src/users/local/dto/create-local-user.dto';
 import { LoginLocalUserDto } from 'src/users/local/dto/login-local-user.dto';
 import { AuthService } from './auth.service';
 import { AccessPayload } from './interface/access-payload';
-import { CredentialTokens } from './interface/credential-tokens';
+import { LoginStatus } from './interface/login-status';
 import { RegistrationStatus } from './interface/registration-status';
 
 @Controller('auth')
@@ -38,7 +38,7 @@ export class AuthController {
     @Body() loginUserDto: LoginLocalUserDto,
   ): Promise<AccessPayload> {
     const loginStatus = await this.authService.login(loginUserDto);
-    return this.processCredentialTokens(loginStatus, response);
+    return this.processLoginStatus(loginStatus, response);
   }
 
   @Post('google')
@@ -47,7 +47,7 @@ export class AuthController {
     @Body() loginUserDto: LoginGoogleUserDto,
   ): Promise<AccessPayload> {
     const loginStatus = await this.authService.googleLogin(loginUserDto);
-    return this.processCredentialTokens(loginStatus, response);
+    return this.processLoginStatus(loginStatus, response);
   }
 
   @Post('logout')
@@ -68,11 +68,11 @@ export class AuthController {
     return accessPayload;
   }
 
-  private processCredentialTokens(
-    tokens: CredentialTokens,
+  private processLoginStatus(
+    status: LoginStatus,
     response: Response,
   ): AccessPayload {
-    const { accessToken, refreshToken } = tokens;
+    const { accessPayload, refreshToken } = status;
     response.cookie('jwt', refreshToken, {
       httpOnly: true,
       path: '/auth/renew-token',
@@ -80,6 +80,6 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
-    return { accessToken };
+    return accessPayload;
   }
 }

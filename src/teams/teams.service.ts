@@ -1,14 +1,15 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { pokemonDataMap } from 'src/data/pokemonDataMap';
 import { toTeamDto } from 'src/shared/mapper';
 import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
+import { PokemonDto } from './dto/pokemon.dto';
 import { TeamDto } from './dto/team.dto';
 import { Pokemon } from './entities/Pokemon.entity';
 import { Team } from './entities/Team.entity';
+import { PokemonsService } from './pokemons.service';
 
 @Injectable()
 export class TeamsService {
@@ -19,6 +20,7 @@ export class TeamsService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(Pokemon)
     private readonly pokemonRepo: Repository<Pokemon>,
+    private readonly pokemonsService: PokemonsService,
   ) {}
 
   async findAll(userId: string) {
@@ -28,10 +30,21 @@ export class TeamsService {
     });
   }
 
+  async findOne(userId: string, teamId: string, strict = false) {
+    return strict
+      ? this.teamRepo.findOneOrFail({
+          where: { user: { id: userId }, id: teamId },
+          relations: ['pokemons'],
+        })
+      : this.teamRepo.findOne({
+          where: { user: { id: userId }, id: teamId },
+          relations: ['pokemons'],
+        });
+  }
+
   async create(userId: string, createTeamDto: CreateTeamDto): Promise<TeamDto> {
     const user = await this.userRepo.findOneOrFail(userId);
-    const teamName = createTeamDto.name ?? 'Team Name';
-
+    const teamName = !createTeamDto.name ? 'Team name' : createTeamDto.name;
     const team = this.teamRepo.create({
       user,
       name: teamName,
@@ -42,74 +55,23 @@ export class TeamsService {
     return toTeamDto(team);
   }
 
-  async addPokemon(teamId: string, createPokemonDto: CreatePokemonDto) {
-    if (!this.validate(createPokemonDto)) {
+  async delete(userId: string, teamId: string) {
+    return this.teamRepo.delete({ id: teamId, user: { id: userId } });
+  }
+
+  async addPokemon(
+    userId: string,
+    teamId: string,
+    createPokemonDto: CreatePokemonDto,
+  ): Promise<PokemonDto> {
+    const team = await this.findOne(userId, teamId, true);
+    if (team.pokemons.length < 6) {
+      return this.pokemonsService.create(userId, team, createPokemonDto);
+    } else {
       throw new HttpException(
-        'Invalid create pokemon request',
+        'A team can only have 6 pokemons. Please reduce team size before adding more.',
         HttpStatus.BAD_REQUEST,
       );
     }
-
-    const team = await this.teamRepo.findOneOrFail(teamId);
-    const pokemon = this.pokemonRepo.create({ ...createPokemonDto, team });
-    return this.pokemonRepo.save(pokemon);
-  }
-
-  private validate(dto: CreatePokemonDto) {
-    const {
-      pokemon_id,
-      ability_id,
-      moves,
-      hp_ev,
-      attack_ev,
-      defense_ev,
-      special_attack_ev,
-      special_defense_ev,
-      speed_ev,
-    } = dto;
-    const pokemonData = pokemonDataMap.get(pokemon_id);
-
-    if (!pokemonData) {
-      throw new HttpException('Invalid pokemon id', HttpStatus.BAD_REQUEST);
-    }
-
-    if (
-      !this.validateEvs([
-        hp_ev,
-        attack_ev,
-        defense_ev,
-        special_attack_ev,
-        special_defense_ev,
-        speed_ev,
-      ])
-    ) {
-      throw new HttpException('EV total is invalid', HttpStatus.BAD_REQUEST);
-    }
-
-    if (!this.validateMoves(moves, pokemonData.moveset)) {
-      throw new HttpException(
-        'Moves contain unlearnable move by this pokemon',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    if (!this.validateAbilities(ability_id, pokemonData.abilities)) {
-      throw new HttpException('Invalid ability', HttpStatus.BAD_REQUEST);
-    }
-
-    return true;
-  }
-
-  private validateMoves(moves: number[], moveset: number[]) {
-    return moves.every((m) => moveset.includes(m));
-  }
-
-  private validateEvs(evs: number[]) {
-    return evs.reduce((a, b) => a + b, 0) <= 508;
-  }
-
-  private validateAbilities(abilityId: number, abilities: number[]) {
-    console.log(abilities);
-    return abilities.includes(abilityId);
   }
 }
