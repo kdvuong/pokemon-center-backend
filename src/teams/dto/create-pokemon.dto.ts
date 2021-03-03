@@ -1,6 +1,5 @@
 import {
   ArrayMaxSize,
-  IsArray,
   IsBoolean,
   IsNumber,
   IsString,
@@ -9,8 +8,8 @@ import {
 } from 'class-validator';
 
 export class CreatePokemonDto {
-  @IsString()
-  pokemon_id: string;
+  @IsNumber()
+  pokemon_id: number;
 
   @IsString()
   nickname: string;

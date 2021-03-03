@@ -1,6 +1,6 @@
 import { Request } from 'express';
-import { AccessTokenPayload } from 'src/auth/interface/access-token-payload';
+import { UserDto } from 'src/users/dto/user.dto';
 
 export interface UserRequest extends Request {
-  user: AccessTokenPayload;
+  user: UserDto;
 }

@@ -8,10 +8,11 @@ import { GoogleUsersService } from 'src/users/google/google-users.service';
 import { RefreshTokenPayload } from './interface/refresh-token-payload';
 import { UsersService } from 'src/users/users.service';
 import { RegistrationStatus } from './interface/registration-status';
-import { CredentialTokens } from './interface/credential-tokens';
+import { LoginStatus } from './interface/login-status';
 import { AccessPayload } from './interface/access-payload';
 import { AccessTokenPayload } from './interface/access-token-payload';
 import { TokenExpiredError } from 'jsonwebtoken';
+import { UserDto } from 'src/users/dto/user.dto';
 
 @Injectable()
 export class AuthService {
@@ -38,23 +39,28 @@ export class AuthService {
     return status;
   }
 
-  async login(loginUserDto: LoginLocalUserDto): Promise<CredentialTokens> {
+  async login(loginUserDto: LoginLocalUserDto): Promise<LoginStatus> {
     // find user in db
-    const { id } = await this.localUsersService.findByLogin(loginUserDto);
+    const user = await this.localUsersService.findByLogin(loginUserDto);
 
     // generate and sign token
-    const accessToken = this.generateAccessToken(id);
-    const refreshToken = this.generateRefreshToken(id);
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user.id);
+
+    const accessPayload: AccessPayload = {
+      accessToken,
+      user,
+    };
 
     return {
-      accessToken,
+      accessPayload,
       refreshToken,
     };
   }
 
-  private generateAccessToken(userId: string): string {
+  private generateAccessToken(userDto: UserDto): string {
     const payload: AccessTokenPayload = {
-      id: userId,
+      user: userDto,
     };
     const options: JwtSignOptions = {
       secret: process.env.ACCESS_TOKEN_SECRET,
@@ -64,7 +70,7 @@ export class AuthService {
     return token;
   }
 
-  private generateRefreshToken(userId: string): string {
+  private generateRefreshToken(userId: string) {
     const payload: RefreshTokenPayload = {
       id: userId,
     };
@@ -81,8 +87,10 @@ export class AuthService {
       const { id } = this.jwtService.verify<RefreshTokenPayload>(token, {
         secret: process.env.REFRESH_TOKEN_SECRET,
       });
+      const user = await this.usersService.findOne(id);
       return {
-        accessToken: this.generateAccessToken(id),
+        accessToken: this.generateAccessToken(user),
+        user,
       };
     } catch (err) {
       if (err instanceof TokenExpiredError) {
@@ -95,14 +103,19 @@ export class AuthService {
     }
   }
 
-  async googleLogin(dto: LoginGoogleUserDto): Promise<CredentialTokens> {
-    const { id } = await this.googleUsersService.findByOAuth(dto);
+  async googleLogin(dto: LoginGoogleUserDto): Promise<LoginStatus> {
+    const user = await this.googleUsersService.findByOAuth(dto);
     // generate and sign token
-    const accessToken = this.generateAccessToken(id);
-    const refreshToken = this.generateRefreshToken(id);
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user.id);
+
+    const accessPayload: AccessPayload = {
+      accessToken,
+      user,
+    };
 
     return {
-      accessToken,
+      accessPayload,
       refreshToken,
     };
   }
